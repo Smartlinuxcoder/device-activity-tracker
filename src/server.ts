@@ -17,13 +17,18 @@ import { Boom } from '@hapi/boom';
 import { WhatsAppTracker } from './tracker';
 
 const app = express();
-app.use(cors());
+app.use(cors({
+    origin: "http://192.168.1.101:3000",
+    credentials: true
+}));
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
     cors: {
-        origin: "*", // Allow all origins for dev
-        methods: ["GET", "POST"]
+        origin: "http://192.168.1.101:3000",
+        methods: ["GET", "POST"],
+        allowedHeaders: ["Content-Type"],
+        credentials: true
     }
 });
 
