@@ -3,7 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import { Login } from './components/Login';
 import { Dashboard } from './components/Dashboard';
 
-export const socket: Socket = io('http://localhost:3001');
+export const socket: Socket = io('http://192.168.1.101:3001');
 
 function App() {
     const [isConnected, setIsConnected] = useState(socket.connected);
