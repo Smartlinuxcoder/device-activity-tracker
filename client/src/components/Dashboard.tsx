@@ -127,6 +127,28 @@ export function Dashboard() {
             });
         }
 
+        function onTrackedContacts(jids: string[]) {
+            setContacts(prev => {
+                const next = new Map(prev);
+                jids.forEach(jid => {
+                    if (!next.has(jid)) {
+                        const number = jid.replace(/\D/g, '');
+                        next.set(jid, {
+                            jid: jid,
+                            displayNumber: number,
+                            contactName: number,
+                            data: [],
+                            devices: [],
+                            deviceCount: 0,
+                            presence: null,
+                            profilePic: null
+                        });
+                    }
+                });
+                return next;
+            });
+        }
+
         function onError(data: { jid?: string, message: string }) {
             setError(data.message);
             setTimeout(() => setError(null), 3000);
@@ -137,7 +159,11 @@ export function Dashboard() {
         socket.on('contact-name', onContactName);
         socket.on('contact-added', onContactAdded);
         socket.on('contact-removed', onContactRemoved);
+        socket.on('tracked-contacts', onTrackedContacts);
         socket.on('error', onError);
+
+        // Request initial contacts list
+        socket.emit('request-contacts');
 
         return () => {
             socket.off('tracker-update', onTrackerUpdate);
@@ -145,6 +171,7 @@ export function Dashboard() {
             socket.off('contact-name', onContactName);
             socket.off('contact-added', onContactAdded);
             socket.off('contact-removed', onContactRemoved);
+            socket.off('tracked-contacts', onTrackedContacts);
             socket.off('error', onError);
         };
     }, []);

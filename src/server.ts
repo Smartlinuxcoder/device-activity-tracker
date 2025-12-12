@@ -9,7 +9,7 @@
 
 import express from 'express';
 import { createServer } from 'http';
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import cors from 'cors';
 import makeWASocket, { DisconnectReason, useMultiFileAuthState } from '@whiskeysockets/baileys';
 import { pino } from 'pino';
@@ -78,7 +78,7 @@ async function connectToWhatsApp() {
 
 connectToWhatsApp();
 
-io.on('connection', (socket) => {
+io.on('connection', (socket: Socket) => {
     console.log('Client connected');
 
     if (isWhatsAppConnected) {
@@ -147,6 +147,33 @@ io.on('connection', (socket) => {
             trackers.delete(jid);
             socket.emit('contact-removed', jid);
         }
+    });
+
+    socket.on('request-contacts', () => {
+        console.log('Client requested contacts');
+        const jids = Array.from(trackers.keys());
+        socket.emit('tracked-contacts', jids);
+
+        jids.forEach(async (jid) => {
+            const tracker = trackers.get(jid);
+            if (tracker) {
+                const ppUrl = await tracker.getProfilePicture();
+                socket.emit('profile-pic', { jid, url: ppUrl });
+
+                let contactName = jid.replace(/\D/g, '');
+                try {
+                    if (sock) {
+                        const contactInfo = await sock.onWhatsApp(jid);
+                        if (contactInfo && contactInfo[0]?.notify) {
+                            contactName = contactInfo[0].notify;
+                        }
+                    }
+                } catch (err) {
+                    console.log(`[NAME] Could not fetch contact name for ${jid}`);
+                }
+                socket.emit('contact-name', { jid, name: contactName });
+            }
+        });
     });
 });
 
